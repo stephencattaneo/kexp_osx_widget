@@ -1,6 +1,6 @@
 # KEXP Now Playing
 
-macOS widget + menu-bar player for KEXP 90.3 FM. Requires macOS 26+.
+macOS widget + menu-bar player for KEXP 90.3 FM. Requires macOS 15+.
 
 ## Install
 
