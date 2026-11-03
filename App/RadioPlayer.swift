@@ -64,6 +64,7 @@ final class RadioPlayer {
     private func setPlaying(_ playing: Bool) {
         isPlaying = playing
         SharedState.isPlaying = playing
+        SystemNowPlaying.shared.setPlaying(playing)
         WidgetCenter.shared.reloadTimelines(ofKind: SharedState.widgetKind)
     }
 }

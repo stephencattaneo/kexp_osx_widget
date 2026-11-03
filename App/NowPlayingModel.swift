@@ -32,6 +32,7 @@ final class NowPlayingModel {
             let changed = fresh.current?.id != data?.current?.id || fresh.showName != data?.showName
             data = fresh
             lastError = nil
+            SystemNowPlaying.shared.update(fresh)
             if changed {
                 WidgetCenter.shared.reloadTimelines(ofKind: SharedState.widgetKind)
             }

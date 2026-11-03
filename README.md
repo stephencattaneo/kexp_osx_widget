@@ -1,6 +1,6 @@
 # KEXP Now Playing
 
-macOS widget + menu-bar player for KEXP 90.3 FM. Requires macOS 15+.
+macOS widget + background player for KEXP 90.3 FM, with Now Playing / media-key support. Requires macOS 15+.
 
 ## Install
 
@@ -9,7 +9,8 @@ macOS widget + menu-bar player for KEXP 90.3 FM. Requires macOS 15+.
 3. Open the app. macOS will block it (unverified developer) → **System Settings › Privacy & Security** → **Open Anyway**.
 4. Right-click the desktop → **Edit Widgets…** → search **KEXP**.
 
-Keep the app running (radio icon in the menu bar) for playback and live track updates.
+The app runs in the background (no Dock or menu-bar icon) and handles playback and live track updates.
+Play/pause from the widget, macOS Now Playing, or media keys. Quit: `open kexpnowplaying://quit`.
 
 ### Or build from source
 
