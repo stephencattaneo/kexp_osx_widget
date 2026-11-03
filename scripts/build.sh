@@ -2,6 +2,7 @@
 # Builds KEXP Now Playing without an Apple developer team: compiles unsigned,
 # then ad-hoc signs the widget extension and app with their entitlements, and
 # installs to ~/Applications so WidgetKit can discover the widget.
+# Usage: build.sh [--open | --no-install]
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -19,6 +20,8 @@ APPEX="$APP/Contents/PlugIns/KEXPWidget.appex"
 codesign --force --sign - --entitlements Widget/KEXPWidget.entitlements --generate-entitlement-der "$APPEX"
 codesign --force --sign - --entitlements App/KEXPNowPlaying.entitlements --generate-entitlement-der "$APP"
 codesign --verify --deep --strict "$APP"
+
+[[ "${1:-}" == "--no-install" ]] && { echo "Built $APP"; exit 0; }
 
 DEST="$HOME/Applications/KEXP Now Playing.app"
 OLD="$HOME/Applications/KEXPNowPlaying.app"   # pre-rename install

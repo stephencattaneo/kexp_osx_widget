@@ -1,37 +1,29 @@
-# KEXP Now Playing for macOS
+# KEXP Now Playing
 
-Desktop / Notification Center widget (small, medium, large; light & dark) showing what's on
-KEXP 90.3 FM, plus a menu-bar app that plays the live stream. Design:
-<https://claude.ai/artifact/4VjRbTDnvo6tt8gfyfoxZf>
+macOS widget + menu-bar player for KEXP 90.3 FM. Requires macOS 26+.
 
-## Build & install
+## Install
 
-Requires Xcode 26+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
+1. Download the latest `.dmg` from [Releases](https://github.com/stephencattaneo/kexp_osx_widget/releases/latest).
+2. Open it and drag **KEXP Now Playing** to **Applications**.
+3. Open the app. macOS will block it (unverified developer) → **System Settings › Privacy & Security** → **Open Anyway**.
+4. Right-click the desktop → **Edit Widgets…** → search **KEXP**.
+
+Keep the app running (radio icon in the menu bar) for playback and live track updates.
+
+### Or build from source
+
+Needs Xcode 26+.
 
 ```sh
+brew install xcodegen
 ./scripts/build.sh --open
 ```
 
-This builds, ad-hoc signs (no Apple developer team needed), installs to
-`~/Applications/KEXP Now Playing.app`, and launches it. Then right-click the desktop →
-**Edit Widgets…** → search "KEXP".
+## Releasing (maintainer)
 
-To work in Xcode instead: `xcodegen generate && open KEXPNowPlaying.xcodeproj`.
+1. Bump `MARKETING_VERSION` in `project.yml`, commit, push.
+2. `./scripts/package.sh` → `dist/KEXP-Now-Playing-<version>.dmg`
+3. `gh release create v<version> dist/KEXP-Now-Playing-<version>.dmg --generate-notes`
 
-The app icon is generated: `swift scripts/make-icon.swift App/Assets.xcassets/AppIcon.appiconset`.
-
-## Layout
-
-| Path | What |
-|---|---|
-| `Shared/KEXPClient.swift` | `api.kexp.org/v2` plays + show lookup, artwork prefetch |
-| `Shared/NowPlayingViews.swift` | Small / Medium / Large layouts from the design |
-| `Shared/Theme.swift`, `Components.swift` | Palette, KEXP mark, live badge, play button |
-| `Shared/SharedState.swift` | Play state + the `kexpnowplaying://toggle` URL behind the widget's play button |
-| `App/` | Menu-bar app: `RadioPlayer` (AVPlayer on the AAC stream), API polling every 30 s |
-| `Widget/` | WidgetKit extension; timeline refreshes every 90 s |
-
-Play state lives in the app's preferences, which the widget reads through a read-only sandbox
-exception (App Groups and App Intents both need a signing team ID). The app
-reloads widget timelines on every track change and play/pause, so keep it running for
-up-to-the-song accuracy; on its own, the widget refreshes on WidgetKit's budget.
+Release when user-facing behavior changes; no need for README/script-only changes.
