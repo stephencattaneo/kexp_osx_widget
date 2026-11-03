@@ -1,5 +1,7 @@
 # KEXP Now Playing
 
+![KEXP Now Playing widgets: small, medium and large](docs/widgets.png)
+
 macOS widget + background player for KEXP 90.3 FM, with Now Playing / media-key support. Requires macOS 15+.
 
 ## Install
