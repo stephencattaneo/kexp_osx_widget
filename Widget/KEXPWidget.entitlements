@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.app-sandbox</key><true/>
+	<key>com.apple.security.network.client</key><true/>
+	<!-- Read the host app's play state from ~/Library/Preferences/com.scattaneo.KEXPNowPlaying.plist.
+	     Works with ad-hoc signing, unlike App Groups (which need a team ID). -->
+	<key>com.apple.security.temporary-exception.shared-preference.read-only</key>
+	<array>
+		<string>com.scattaneo.KEXPNowPlaying</string>
+	</array>
+</dict>
+</plist>
