@@ -3,6 +3,7 @@ import Foundation
 enum KEXP {
     static let streamURL = URL(string: "https://kexp.streamguys1.com/kexp160.aac")!
     static let websiteURL = URL(string: "https://www.kexp.org/playlist/")!
+    static let homeURL = URL(string: "https://www.kexp.org")!
 }
 
 /// Minimal client for the public KEXP v2 API.
@@ -21,9 +22,29 @@ struct KEXPClient: Sendable {
         return d
     }()
 
-    func recentPlays(limit: Int = 12) async throws -> [KEXPPlay] {
+    /// kexp.org's own player uses this when it can't determine the listener's location.
+    static let defaultPlaylistLocation = 3
+
+    /// The playlist location for this listener's IP (e.g. 2 = Bay Area/KEXC, 3 = Seattle/default),
+    /// as kexp.org's player determines it. Local shows differ by location. Cached for an hour.
+    func playlistLocation() async -> Int {
+        if let cached = await PlaylistLocationCache.shared.value { return cached }
+        struct Response: Decodable { let location: Int }
+        let url = URL(string: "https://www.kexp.org/location_livestream/")!
+        guard let (data, _) = try? await session.data(from: url),
+              let location = try? JSONDecoder().decode(Response.self, from: data).location else {
+            return Self.defaultPlaylistLocation   // don't cache failures
+        }
+        await PlaylistLocationCache.shared.store(location)
+        return location
+    }
+
+    func recentPlays(limit: Int = 12, location: Int) async throws -> [KEXPPlay] {
         var comps = URLComponents(url: Self.base.appending(path: "plays/"), resolvingAgainstBaseURL: false)!
-        comps.queryItems = [URLQueryItem(name: "limit", value: String(limit))]
+        comps.queryItems = [
+            URLQueryItem(name: "limit", value: String(limit)),
+            URLQueryItem(name: "playlist_location", value: String(location)),
+        ]
         let (data, _) = try await session.data(from: comps.url!)
         return try Self.decoder.decode(KEXPPlaysPage.self, from: data).results
     }
@@ -36,7 +57,7 @@ struct KEXPClient: Sendable {
     /// Fetches the latest plays plus the show, and optionally artwork for the
     /// current track and the first `recentArtworkCount` recent tracks.
     func nowPlaying(recentCount: Int = 3, includeArtwork: Bool, recentArtworkCount: Int = 0) async throws -> NowPlaying {
-        let plays = try await recentPlays()
+        let plays = try await recentPlays(location: await playlistLocation())
         guard let latest = plays.first else {
             return NowPlaying(current: nil, showName: nil, recent: [], fetchedAt: .now)
         }
@@ -81,5 +102,22 @@ struct KEXPClient: Sendable {
             artworkURL: play.thumbnailURL,
             artwork: nil
         )
+    }
+}
+
+/// Remembers the IP-derived playlist location for an hour (it only changes if the Mac moves).
+actor PlaylistLocationCache {
+    static let shared = PlaylistLocationCache()
+    private var location: Int?
+    private var storedAt: Date?
+
+    var value: Int? {
+        guard let location, let storedAt, Date.now.timeIntervalSince(storedAt) < 3600 else { return nil }
+        return location
+    }
+
+    func store(_ location: Int) {
+        self.location = location
+        storedAt = .now
     }
 }

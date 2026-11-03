@@ -13,14 +13,22 @@ struct KEXPMark: Shape {
     }
 }
 
+/// The KEXP mark; clicking it opens kexp.org in the default browser.
 struct KEXPLogo: View {
     @Environment(\.kexpTheme) private var theme
     var width: CGFloat
     var body: some View {
-        KEXPMark()
-            .fill(theme.logo)
-            .frame(width: width, height: width * 112 / 130)
-            .accessibilityLabel("KEXP")
+        Link(destination: KEXP.homeURL) {
+            KEXPMark()
+                .fill(theme.logo)
+                .frame(width: width, height: width * 112 / 130)
+                // Enlarge the hit area beyond the small glyph without shifting layout.
+                .padding(6)
+                .contentShape(Rectangle())
+                .padding(-6)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open kexp.org")
     }
 }
 
