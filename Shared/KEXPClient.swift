@@ -74,7 +74,8 @@ struct KEXPClient: Sendable {
 
         async let showName: String? = {
             guard let id = latest.show else { return nil }
-            return try? await show(id: id).displayName
+            // A show's name doesn't change during the show; look it up once per show.
+            return await Self.showNames.value(for: id) { try? await show(id: id).displayName }
         }()
 
         if includeArtwork {
@@ -91,12 +92,19 @@ struct KEXPClient: Sendable {
         return NowPlaying(current: current, showName: await showName, showID: latest.show, recent: recent, fetchedAt: .now)
     }
 
+    /// Album art is served without cache headers, so keep it here instead of
+    /// re-downloading the same covers on every refresh.
+    private static let artworkCache = ValueCache<URL, Data>(limit: 40)
+    private static let showNames = ValueCache<Int, String>(limit: 8)
+
     private func artwork(at url: URL?) async -> Data? {
-        guard let url,
-              let (data, response) = try? await session.data(from: url),
-              let http = response as? HTTPURLResponse, http.statusCode == 200,
-              http.mimeType?.hasPrefix("image/") == true else { return nil }   // e.g. Cover Art Archive 404s
-        return data
+        guard let url else { return nil }
+        return await Self.artworkCache.value(for: url) {
+            guard let (data, response) = try? await session.data(from: url),
+                  let http = response as? HTTPURLResponse, http.statusCode == 200,
+                  http.mimeType?.hasPrefix("image/") == true else { return nil }   // e.g. Cover Art Archive 404s
+            return data
+        }
     }
 
     private static func trackInfo(_ play: KEXPPlay) -> TrackInfo? {
