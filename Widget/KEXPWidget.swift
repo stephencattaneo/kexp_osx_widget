@@ -27,8 +27,8 @@ struct NowPlayingProvider: TimelineProvider, Sendable {
         let family = context.family
         Task {
             let entry = await entry(for: family)
-            // Songs run ~3–4 minutes; the host app also reloads us on every track change.
-            let next = Date.now.addingTimeInterval(90)
+            // The host app reloads us on every track change; this is only a fallback for when it isn't running.
+            let next = Date.now.addingTimeInterval(300)
             completion(Timeline(entries: [entry], policy: .after(next)))
         }
     }

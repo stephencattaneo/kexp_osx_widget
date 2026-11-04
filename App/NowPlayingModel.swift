@@ -21,14 +21,17 @@ final class NowPlayingModel {
         pollTask = Task { [weak self] in
             while !Task.isCancelled {
                 await self?.refresh()
-                try? await Task.sleep(for: .seconds(30))
+                // Check often while listening; ease off when paused (the widget still gets updates).
+                let interval: Duration = RadioPlayer.shared.isPlaying ? .seconds(30) : .seconds(120)
+                try? await Task.sleep(for: interval)
             }
         }
     }
 
     func refresh() async {
         do {
-            let fresh = try await client.nowPlaying(recentCount: 3, includeArtwork: true, recentArtworkCount: 3)
+            // The app only shows the current track (in macOS Now Playing), so skip recent tracks' art.
+            let fresh = try await client.nowPlaying(recentCount: 3, includeArtwork: true, recentArtworkCount: 0)
             let changed = fresh.current?.id != data?.current?.id || fresh.showName != data?.showName
             data = fresh
             lastError = nil
