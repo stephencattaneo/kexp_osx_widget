@@ -69,7 +69,7 @@ struct MediumNowPlayingView: View {
                 Spacer(minLength: 0)
                 HStack(alignment: .center, spacing: 10) {
                     if let show = data.showName {
-                        ShowLine(name: show)
+                        ShowLink(id: data.showID) { ShowLine(name: show) }
                     }
                     Spacer(minLength: 0)
                     PlayPauseButton(playing: playing, diameter: 38)
@@ -122,32 +122,42 @@ struct LargeNowPlayingView: View {
             .padding(.top, 14)
 
             if let show = data.showName {
-                HStack(spacing: 10) {
-                    Circle().fill(theme.logo.opacity(0.16)).frame(width: 28, height: 28)
-                        .overlay(Image(systemName: "mic").font(.system(size: 12, weight: .medium)).foregroundStyle(theme.logo))
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("ON AIR").font(.system(size: 10, weight: .semibold)).tracking(0.6).foregroundStyle(theme.muted)
-                        Text(show).font(.system(size: 13, weight: .medium)).foregroundStyle(theme.text).lineLimit(1)
+                ShowLink(id: data.showID) {
+                    HStack(spacing: 10) {
+                        Circle().fill(theme.logo.opacity(0.16)).frame(width: 28, height: 28)
+                            .overlay(Image(systemName: "mic").font(.system(size: 12, weight: .medium)).foregroundStyle(theme.logo))
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("ON AIR").font(.system(size: 10, weight: .semibold)).tracking(0.6).foregroundStyle(theme.muted)
+                            Text(show).font(.system(size: 13, weight: .medium)).foregroundStyle(theme.text).lineLimit(1)
+                        }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.top, 12)
-                .frame(maxWidth: .infinity, alignment: .leading)
                 .overlay(alignment: .top) { Rectangle().fill(theme.divider).frame(height: 1) }
                 .padding(.top, 14)
             }
 
-            Text("RECENTLY PLAYED")
-                .font(.system(size: 10, weight: .semibold)).tracking(0.6)
-                .foregroundStyle(theme.muted)
-                .padding(.top, 14)
+            // The whole track-history block opens the full playlist on kexp.org.
+            Link(destination: SharedState.widgetLink(SharedState.playlistURL, web: KEXP.websiteURL)) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("RECENTLY PLAYED")
+                        .font(.system(size: 10, weight: .semibold)).tracking(0.6)
+                        .foregroundStyle(theme.muted)
 
-            VStack(spacing: 8) {
-                ForEach(data.recent.prefix(3), id: \.id) { track in
-                    RecentRow(track: track)
+                    VStack(spacing: 8) {
+                        ForEach(data.recent.prefix(3), id: \.id) { track in
+                            RecentRow(track: track)
+                        }
+                    }
+                    .padding(.top, 8)
                 }
+                .contentShape(Rectangle())
             }
-            .padding(.top, 8)
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open the KEXP playlist")
+            .padding(.top, 14)
             Spacer(minLength: 0)
         }
         .padding(16)
@@ -171,5 +181,23 @@ struct RecentRow: View {
                 .foregroundStyle(theme.muted)
         }
         .frame(height: 36)
+    }
+}
+
+/// Makes `content` open the current show's page on kexp.org, when the show is known.
+struct ShowLink<Content: View>: View {
+    var id: Int?
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        if let id {
+            Link(destination: SharedState.widgetLink(SharedState.showURL(id: id), web: KEXP.showURL(id: id))) {
+                content.contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open this show on kexp.org")
+        } else {
+            content
+        }
     }
 }

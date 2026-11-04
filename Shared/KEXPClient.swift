@@ -4,6 +4,11 @@ enum KEXP {
     static let streamURL = URL(string: "https://kexp.streamguys1.com/kexp160.aac")!
     static let websiteURL = URL(string: "https://www.kexp.org/playlist/")!
     static let homeURL = URL(string: "https://www.kexp.org")!
+
+    /// A show episode's page (its playlist) on kexp.org.
+    static func showURL(id: Int) -> URL {
+        URL(string: "https://www.kexp.org/playlist/show/\(id)/")!
+    }
 }
 
 /// Minimal client for the public KEXP v2 API.
@@ -83,12 +88,15 @@ struct KEXPClient: Sendable {
             for (i, data) in recentArt.enumerated() { recent[i].artwork = data }
         }
 
-        return NowPlaying(current: current, showName: await showName, recent: recent, fetchedAt: .now)
+        return NowPlaying(current: current, showName: await showName, showID: latest.show, recent: recent, fetchedAt: .now)
     }
 
     private func artwork(at url: URL?) async -> Data? {
-        guard let url else { return nil }
-        return try? await session.data(from: url).0
+        guard let url,
+              let (data, response) = try? await session.data(from: url),
+              let http = response as? HTTPURLResponse, http.statusCode == 200,
+              http.mimeType?.hasPrefix("image/") == true else { return nil }   // e.g. Cover Art Archive 404s
+        return data
     }
 
     private static func trackInfo(_ play: KEXPPlay) -> TrackInfo? {

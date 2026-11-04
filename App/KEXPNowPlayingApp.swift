@@ -1,4 +1,5 @@
 import SwiftUI
+import os
 
 /// Background agent (no Dock or menu-bar icon). Controlled from the widget, macOS Now Playing,
 /// media keys, and `kexpnowplaying://` URLs.
@@ -20,15 +21,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         MainActor.assumeIsolated { model = NowPlayingModel() }
     }
 
-    /// `kexpnowplaying://toggle | play | pause | quit`
+    /// `kexpnowplaying://toggle | play | pause | quit | playlist | home | show/<id>`
     @objc private func handleGetURL(_ event: NSAppleEventDescriptor, withReply reply: NSAppleEventDescriptor) {
-        guard let string = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue,
-              let url = URL(string: string), url.scheme == SharedState.toggleURL.scheme else { return }
+        let string = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue
+        Logger(subsystem: SharedState.appDomain, category: "URL").info("open \(string ?? "<nil>", privacy: .public)")
+        guard let string, let url = URL(string: string), url.scheme == SharedState.toggleURL.scheme else { return }
         MainActor.assumeIsolated {
             switch url.host() {
             case "toggle": RadioPlayer.shared.toggle()
             case "play": RadioPlayer.shared.play()
             case "pause": RadioPlayer.shared.pause()
+            case "playlist": NSWorkspace.shared.open(KEXP.websiteURL)
+            case "home": NSWorkspace.shared.open(KEXP.homeURL)
+            case "show":
+                if let id = Int(url.lastPathComponent) { NSWorkspace.shared.open(KEXP.showURL(id: id)) }
             case "quit":
                 RadioPlayer.shared.pause()
                 NSApplication.shared.terminate(nil)

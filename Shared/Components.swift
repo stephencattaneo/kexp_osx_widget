@@ -18,7 +18,7 @@ struct KEXPLogo: View {
     @Environment(\.kexpTheme) private var theme
     var width: CGFloat
     var body: some View {
-        Link(destination: KEXP.homeURL) {
+        Link(destination: SharedState.widgetLink(SharedState.homeURL, web: KEXP.homeURL)) {
             KEXPMark()
                 .fill(theme.logo)
                 .frame(width: width, height: width * 112 / 130)

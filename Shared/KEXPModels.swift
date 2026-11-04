@@ -10,18 +10,23 @@ struct KEXPPlay: Codable, Hashable, Sendable {
     let artist: String?
     let album: String?
     let thumbnailURI: String?
+    let releaseGroupID: String?
 
     enum CodingKeys: String, CodingKey {
         case id, airdate, show, song, artist, album
         case playType = "play_type"
         case thumbnailURI = "thumbnail_uri"
+        case releaseGroupID = "release_group_id"
     }
 
     var isTrack: Bool { playType == "trackplay" }
 
+    /// KEXP's own thumbnail, or else the album's front cover from the Cover Art Archive
+    /// (KEXP leaves `thumbnail_uri` empty for many plays that still have a release group).
     var thumbnailURL: URL? {
-        guard let thumbnailURI, !thumbnailURI.isEmpty else { return nil }
-        return URL(string: thumbnailURI)
+        if let thumbnailURI, !thumbnailURI.isEmpty { return URL(string: thumbnailURI) }
+        guard let releaseGroupID, !releaseGroupID.isEmpty else { return nil }
+        return URL(string: "https://coverartarchive.org/release-group/\(releaseGroupID)/front-250")
     }
 }
 
@@ -70,6 +75,8 @@ struct NowPlaying: Hashable, Sendable {
     /// `nil` while KEXP is in an air break.
     var current: TrackInfo?
     var showName: String?
+    /// The current show's ID, used to link to its page on kexp.org.
+    var showID: Int? = nil
     var recent: [TrackInfo]
     var fetchedAt: Date
 

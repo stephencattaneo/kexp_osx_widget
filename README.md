@@ -21,13 +21,20 @@ Needs Xcode 26+.
 
 ```sh
 brew install xcodegen
-./scripts/build.sh --open
+rake install   # builds, installs to /Applications, and launches
 ```
+
+## Uninstall
+
+macOS won't trash the app while it's running, so quit it first:
+
+1. Remove the KEXP widget from your desktop (right-click it → **Remove Widget**).
+2. Quit the app: `open kexpnowplaying://quit` (or `pkill -x "KEXP Now Playing"`, or Activity Monitor → search "KEXP" → Quit).
+3. Drag **KEXP Now Playing** from **Applications** to the Trash.
 
 ## Releasing (maintainer)
 
 1. Bump `MARKETING_VERSION` in `project.yml`, commit, push.
-2. `./scripts/package.sh` → `dist/KEXP-Now-Playing-<version>.dmg`
-3. `gh release create v<version> dist/KEXP-Now-Playing-<version>.dmg --generate-notes`
+2. `rake release`: builds `dist/KEXP-Now-Playing-<version>.dmg` and publishes it as GitHub release `v<version>` (stops early if the working tree is dirty, the commit isn't pushed, or the release already exists). Use `rake package` to build the DMG without publishing.
 
 Release when user-facing behavior changes; no need for README/script-only changes.

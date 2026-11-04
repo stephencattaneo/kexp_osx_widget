@@ -13,6 +13,21 @@ enum SharedState {
     /// Opening this URL launches the app (if needed) and toggles playback.
     static let toggleURL = URL(string: "kexpnowplaying://toggle")!
 
+    /// macOS hands widget link URLs to the host app rather than opening them, so web links
+    /// from the widget go through the app, which opens the page in the default browser.
+    static let playlistURL = URL(string: "kexpnowplaying://playlist")!
+    static let homeURL = URL(string: "kexpnowplaying://home")!
+    static func showURL(id: Int) -> URL { URL(string: "kexpnowplaying://show/\(id)")! }
+
+    /// The URL a widget `Link` should use to reach `webURL`.
+    static func widgetLink(_ appURL: URL, web webURL: URL) -> URL {
+        #if WIDGET_EXTENSION
+        appURL
+        #else
+        webURL
+        #endif
+    }
+
     private static let isPlayingKey = "isPlaying"
 
     private static var defaults: UserDefaults {

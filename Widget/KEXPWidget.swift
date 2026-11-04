@@ -68,7 +68,6 @@ struct KEXPWidgetEntryView: View {
         }
         .environment(\.kexpTheme, theme)
         .containerBackground(theme.background, for: .widget)
-        .widgetURL(KEXP.websiteURL)
     }
 }
 

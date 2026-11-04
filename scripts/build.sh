@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Builds KEXP Now Playing without an Apple developer team: compiles unsigned,
 # then ad-hoc signs the widget extension and app with their entitlements, and
-# installs to ~/Applications so WidgetKit can discover the widget.
+# installs to /Applications so WidgetKit can discover the widget.
 # Usage: build.sh [--open | --no-install]
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -23,17 +23,24 @@ codesign --verify --deep --strict "$APP"
 
 [[ "${1:-}" == "--no-install" ]] && { echo "Built $APP"; exit 0; }
 
-DEST="$HOME/Applications/KEXP Now Playing.app"
-OLD="$HOME/Applications/KEXPNowPlaying.app"   # pre-rename install
-mkdir -p "$HOME/Applications"
+DEST="/Applications/KEXP Now Playing.app"
+# Earlier source builds installed to ~/Applications; remove them so WidgetKit
+# doesn't pick up a stale copy of the widget.
+OLD=("$HOME/Applications/KEXP Now Playing.app" "$HOME/Applications/KEXPNowPlaying.app")
 pkill -x "KEXP Now Playing" 2>/dev/null || true
 pkill -x KEXPNowPlaying 2>/dev/null || true
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
-if [[ -d "$OLD" ]]; then "$LSREGISTER" -u "$OLD" 2>/dev/null || true; rm -rf "$OLD"; fi
+for old in "${OLD[@]}"; do
+  if [[ -d "$old" ]]; then "$LSREGISTER" -u "$old" 2>/dev/null || true; rm -rf "$old"; fi
+done
 rm -rf "$DEST"
 cp -R "$APP" "$DEST"
 "$LSREGISTER" -f "$DEST"
 pluginkit -a "$DEST/Contents/PlugIns/KEXPWidget.appex" 2>/dev/null || true
+# chronod (the widget renderer) keeps serving views rendered by the old build, links and
+# all, even after the extension is replaced. Restarting it (launchd relaunches it) forces
+# a fresh render.
+killall chronod 2>/dev/null || true
 
 echo "Installed $DEST"
 [[ "${1:-}" == "--open" ]] && open "$DEST"
