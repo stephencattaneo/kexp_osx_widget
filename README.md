@@ -34,7 +34,6 @@ macOS won't trash the app while it's running, so quit it first:
 
 ## Releasing (maintainer)
 
-1. Bump `MARKETING_VERSION` in `project.yml`, commit, push.
-2. `rake release`: builds `dist/KEXP-Now-Playing-<version>.dmg` and publishes it as GitHub release `v<version>` (stops early if the working tree is dirty, the commit isn't pushed, or the release already exists). Use `rake package` to build the DMG without publishing.
+`rake release` does the whole thing: bumps the version in `project.yml` (next minor version, or `rake "release[2.0]"` for a specific one), builds the DMG, commits, tags, pushes, and publishes the GitHub release with the DMG attached. It checks first that you're on an up-to-date, clean `main`. `rake package` builds the DMG without releasing.
 
 Release when user-facing behavior changes; no need for README/script-only changes.
