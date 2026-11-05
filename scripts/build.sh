@@ -33,6 +33,12 @@ LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchSe
 for old in "${OLD[@]}"; do
   if [[ -d "$old" ]]; then "$LSREGISTER" -u "$old" 2>/dev/null || true; rm -rf "$old"; fi
 done
+# Build products (any configuration) get registered by Xcode/Spotlight too; unregister
+# them so the widget only ever loads from $DEST.
+for product in build/Build/Products/*/"KEXP Now Playing.app"(N); do
+  pluginkit -r "$product/Contents/PlugIns/KEXPWidget.appex" 2>/dev/null || true
+  "$LSREGISTER" -u "$product" 2>/dev/null || true
+done
 rm -rf "$DEST"
 cp -R "$APP" "$DEST"
 "$LSREGISTER" -f "$DEST"

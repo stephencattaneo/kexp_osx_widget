@@ -14,6 +14,8 @@ final class RadioPlayer {
 
     private var player: AVPlayer?
     private var statusObservation: NSKeyValueObservation?
+    /// Consecutive stream failures; reset once the stream is ready.
+    private var failures = 0
     private let log = Logger(subsystem: SharedState.appDomain, category: "RadioPlayer")
 
     private init() {
@@ -52,10 +54,23 @@ final class RadioPlayer {
         switch status {
         case .readyToPlay:
             log.info("stream ready")
+            failures = 0
         case .failed:
             log.error("stream failed: \(error ?? "unknown", privacy: .public)")
-            lastError = error ?? "Couldn’t play the KEXP stream."
-            pause()
+            failures += 1
+            guard failures <= 3, isPlaying else {
+                failures = 0
+                lastError = error ?? "Couldn’t play the KEXP stream."
+                pause()
+                return
+            }
+            // Reconnect with backoff: 2s, 4s, 8s.
+            let delay = Duration.seconds(1 << failures)
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: delay)
+                guard let self, self.isPlaying else { return }
+                self.play()
+            }
         default:
             break
         }

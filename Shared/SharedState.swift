@@ -3,15 +3,19 @@ import Foundation
 /// State shared between the host app and the widget extension.
 ///
 /// The app writes to its own standard defaults
-/// (`~/Library/Preferences/com.scattaneo.KEXPNowPlaying.plist`); the sandboxed widget reads
+/// (`~/Library/Preferences/us.dotnetorgcom.KEXPNowPlaying.plist`); the sandboxed widget reads
 /// that domain via a `shared-preference.read-only` entitlement. This avoids App Groups, which
 /// require a signing team ID.
 enum SharedState {
-    static let appDomain = "com.scattaneo.KEXPNowPlaying"
+    static let appDomain = "us.dotnetorgcom.KEXPNowPlaying"
     static let widgetKind = "KEXPNowPlayingWidget"
 
     /// Opening this URL launches the app (if needed) and toggles playback.
     static let toggleURL = URL(string: "kexpnowplaying://toggle")!
+
+    /// Relaunch the host app (resuming playback if it was playing), or quit it.
+    static let restartURL = URL(string: "kexpnowplaying://restart")!
+    static let quitURL = URL(string: "kexpnowplaying://quit")!
 
     /// macOS hands widget link URLs to the host app rather than opening them, so web links
     /// from the widget go through the app, which opens the page in the default browser.

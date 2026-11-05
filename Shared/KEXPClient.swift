@@ -17,8 +17,37 @@ struct KEXPClient: Sendable {
 
     private let session: URLSession
 
-    init(session: URLSession = .shared) {
+    init(session: URLSession = KEXPClient.defaultSession) {
         self.session = session
+    }
+
+    /// Short timeouts so a dead connection fails (and retries) well inside the widget's time budget.
+    static let defaultSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 10
+        config.timeoutIntervalForResource = 20
+        config.waitsForConnectivity = false
+        return URLSession(configuration: config)
+    }()
+
+    /// GETs `url`, retrying network errors and 5xx/429 responses with a short backoff.
+    private func data(from url: URL, attempts: Int = 3) async throws -> (Data, HTTPURLResponse) {
+        var delay: Duration = .milliseconds(500)
+        for attempt in 1...attempts {
+            do {
+                let (data, response) = try await session.data(from: url)
+                guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+                let retryable = http.statusCode == 429 || (500...599).contains(http.statusCode)
+                if retryable && attempt < attempts {
+                    try await Task.sleep(for: delay); delay *= 2; continue
+                }
+                guard (200...299).contains(http.statusCode) else { throw URLError(.badServerResponse) }
+                return (data, http)
+            } catch let error as URLError where attempt < attempts && error.code != .cancelled {
+                try await Task.sleep(for: delay); delay *= 2
+            }
+        }
+        throw URLError(.cannotLoadFromNetwork)   // unreachable: the last attempt returns or throws
     }
 
     private static let decoder: JSONDecoder = {
@@ -36,7 +65,7 @@ struct KEXPClient: Sendable {
         if let cached = await PlaylistLocationCache.shared.value { return cached }
         struct Response: Decodable { let location: Int }
         let url = URL(string: "https://www.kexp.org/location_livestream/")!
-        guard let (data, _) = try? await session.data(from: url),
+        guard let (data, _) = try? await self.data(from: url, attempts: 2),
               let location = try? JSONDecoder().decode(Response.self, from: data).location else {
             return Self.defaultPlaylistLocation   // don't cache failures
         }
@@ -50,12 +79,12 @@ struct KEXPClient: Sendable {
             URLQueryItem(name: "limit", value: String(limit)),
             URLQueryItem(name: "playlist_location", value: String(location)),
         ]
-        let (data, _) = try await session.data(from: comps.url!)
+        let (data, _) = try await self.data(from: comps.url!)
         return try Self.decoder.decode(KEXPPlaysPage.self, from: data).results
     }
 
     func show(id: Int) async throws -> KEXPShow {
-        let (data, _) = try await session.data(from: Self.base.appending(path: "shows/\(id)/"))
+        let (data, _) = try await self.data(from: Self.base.appending(path: "shows/\(id)/"), attempts: 2)
         return try Self.decoder.decode(KEXPShow.self, from: data)
     }
 
@@ -92,9 +121,10 @@ struct KEXPClient: Sendable {
     }
 
     private func artwork(at url: URL?) async -> Data? {
+        // Cover Art Archive 404s aren't retried (`data(from:)` only retries 5xx and network errors).
         guard let url,
-              let (data, response) = try? await session.data(from: url),
-              let http = response as? HTTPURLResponse, http.statusCode == 200,
+              let (data, http) = try? await self.data(from: url, attempts: 2),
+              http.statusCode == 200,
               http.mimeType?.hasPrefix("image/") == true else { return nil }   // e.g. Cover Art Archive 404s
         return data
     }

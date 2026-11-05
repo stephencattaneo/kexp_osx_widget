@@ -79,6 +79,8 @@ struct NowPlaying: Hashable, Sendable {
     var showID: Int? = nil
     var recent: [TrackInfo]
     var fetchedAt: Date
+    /// True when this is a stand-in because the last fetch failed.
+    var offline = false
 
     static let placeholder = NowPlaying(
         current: TrackInfo(id: 0, title: "Song title", artist: "Artist", album: "Album",

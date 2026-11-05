@@ -1,6 +1,6 @@
 name: KEXPNowPlaying
 options:
-  bundleIdPrefix: com.scattaneo
+  bundleIdPrefix: us.dotnetorgcom
   deploymentTarget:
     macOS: "15.0"
   createIntermediateGroups: true
@@ -22,7 +22,7 @@ targets:
       - Shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.scattaneo.KEXPNowPlaying
+        PRODUCT_BUNDLE_IDENTIFIER: us.dotnetorgcom.KEXPNowPlaying
         PRODUCT_NAME: "KEXP Now Playing"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_FILE: App/Info.plist
@@ -39,7 +39,7 @@ targets:
       - Shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.scattaneo.KEXPNowPlaying.Widget
+        PRODUCT_BUNDLE_IDENTIFIER: us.dotnetorgcom.KEXPNowPlaying.Widget
         INFOPLIST_FILE: Widget/Info.plist
         CODE_SIGN_ENTITLEMENTS: Widget/KEXPWidget.entitlements
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) WIDGET_EXTENSION"

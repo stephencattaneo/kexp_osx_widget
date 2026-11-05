@@ -4,11 +4,11 @@
 <dict>
 	<key>com.apple.security.app-sandbox</key><true/>
 	<key>com.apple.security.network.client</key><true/>
-	<!-- Read the host app's play state from ~/Library/Preferences/com.scattaneo.KEXPNowPlaying.plist.
+	<!-- Read the host app's play state from ~/Library/Preferences/us.dotnetorgcom.KEXPNowPlaying.plist.
 	     Works with ad-hoc signing, unlike App Groups (which need a team ID). -->
 	<key>com.apple.security.temporary-exception.shared-preference.read-only</key>
 	<array>
-		<string>com.scattaneo.KEXPNowPlaying</string>
+		<string>us.dotnetorgcom.KEXPNowPlaying</string>
 	</array>
 </dict>
 </plist>

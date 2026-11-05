@@ -99,36 +99,28 @@ struct ArtworkView: View {
     }
 }
 
-/// Red dot + "LIVE" (+ static EQ bars when playing).
+/// Status badge: red dot + "LIVE" while the stream plays, dimmed while
+/// paused, and gray "OFFLINE" when the last fetch from KEXP failed.
 struct LiveBadge: View {
     @Environment(\.kexpTheme) private var theme
     var playing: Bool
+    var offline = false
     var compact = false
 
     var body: some View {
+        let active = playing && !offline
+        let dot = active ? theme.live : theme.muted
         HStack(spacing: compact ? 5 : 6) {
-            Circle().fill(theme.liveHalo)
+            Circle().fill(active ? theme.liveHalo : theme.muted.opacity(0.18))
                 .frame(width: compact ? 12 : 14, height: compact ? 12 : 14)
-                .overlay(Circle().fill(theme.live).frame(width: compact ? 6 : 7, height: compact ? 6 : 7))
-            Text("LIVE")
+                .overlay(Circle().fill(dot).frame(width: compact ? 6 : 7, height: compact ? 6 : 7))
+            Text(offline ? "OFFLINE" : "LIVE")
                 .font(.system(size: compact ? 10 : 11, weight: .semibold))
                 .tracking(0.6)
-                .foregroundStyle(theme.liveText)
-            if playing { EQBars() }
+                .foregroundStyle(active ? theme.liveText : theme.muted)
         }
-    }
-}
-
-struct EQBars: View {
-    @Environment(\.kexpTheme) private var theme
-    var body: some View {
-        HStack(alignment: .bottom, spacing: 2) {
-            ForEach([0.55, 1.0, 0.75], id: \.self) { h in
-                RoundedRectangle(cornerRadius: 1).fill(theme.liveText).frame(width: 2, height: 9 * h)
-            }
-        }
-        .frame(height: 9, alignment: .bottom)
-        .accessibilityHidden(true)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(offline ? "Can’t reach KEXP" : playing ? "Playing live" : "Paused")
     }
 }
 
@@ -138,6 +130,8 @@ struct PlayPauseButton: View {
     @Environment(\.kexpTheme) private var theme
     var playing: Bool
     var diameter: CGFloat
+    /// Fill behind the glyph, for buttons that sit over artwork.
+    var backdrop: Color? = nil
 
     var body: some View {
         #if WIDGET_EXTENSION
@@ -154,6 +148,7 @@ struct PlayPauseButton: View {
 
     private var face: some View {
         ZStack {
+            if let backdrop { Circle().fill(backdrop) }
             Circle().strokeBorder(theme.accent, lineWidth: 2.5)
             Image(systemName: playing ? "pause.fill" : "play.fill")
                 .font(.system(size: diameter * 0.36, weight: .bold))
@@ -174,5 +169,29 @@ struct ShowLine: View {
             Text(name).font(.system(size: 11)).lineLimit(2)
         }
         .foregroundStyle(theme.tertiary)
+    }
+}
+
+/// Tiny restart and quit buttons for recovering a stuck host app.
+struct AppControls: View {
+    @Environment(\.kexpTheme) private var theme
+
+    var body: some View {
+        HStack(spacing: 2) {
+            control("arrow.clockwise", url: SharedState.restartURL, label: "Restart KEXP Now Playing")
+            control("xmark", url: SharedState.quitURL, label: "Quit KEXP Now Playing")
+        }
+    }
+
+    private func control(_ symbol: String, url: URL, label: String) -> some View {
+        Link(destination: url) {
+            Image(systemName: symbol)
+                .font(.system(size: 8, weight: .semibold))
+                .foregroundStyle(theme.muted)
+                .frame(width: 14, height: 14)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 }

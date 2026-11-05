@@ -1,6 +1,10 @@
 # KEXP Now Playing
 
-![KEXP Now Playing widgets: small, medium and large](docs/widgets.png)
+<p>
+  <img src="docs/small-widget.png" width="172" alt="Small widget: full-bleed album art with the LIVE badge and play button over it, track and artist below">
+  <img src="docs/medium-widget.png" width="347" alt="Medium widget: album art beside the track, artist and current show, with the play button top right">
+  <img src="docs/large-widget.png" width="350" alt="Large widget: current track with album, the show on air and the three most recently played tracks">
+</p>
 
 macOS widget + background player for KEXP 90.3 FM, with Now Playing / media-key support. Requires macOS 15+.
 

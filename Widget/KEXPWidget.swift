@@ -5,6 +5,7 @@ struct NowPlayingEntry: TimelineEntry {
     let date: Date
     let data: NowPlaying
     let playing: Bool
+    var failed = false
 }
 
 struct NowPlayingProvider: TimelineProvider, Sendable {
@@ -28,7 +29,8 @@ struct NowPlayingProvider: TimelineProvider, Sendable {
         Task {
             let entry = await entry(for: family)
             // Songs run ~3–4 minutes; the host app also reloads us on every track change.
-            let next = Date.now.addingTimeInterval(90)
+            // After a failed fetch, ask to retry sooner.
+            let next = Date.now.addingTimeInterval(entry.failed ? 30 : 90)
             completion(Timeline(entries: [entry], policy: .after(next)))
         }
     }
@@ -47,7 +49,8 @@ struct NowPlayingProvider: TimelineProvider, Sendable {
             data.current = nil
             data.recent = []
             data.showName = "Couldn’t reach KEXP"
-            return NowPlayingEntry(date: .now, data: data, playing: playing)
+            data.offline = true
+            return NowPlayingEntry(date: .now, data: data, playing: playing, failed: true)
         }
     }
 }

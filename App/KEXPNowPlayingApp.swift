@@ -21,7 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         MainActor.assumeIsolated { model = NowPlayingModel() }
     }
 
-    /// `kexpnowplaying://toggle | play | pause | quit | playlist | home | show/<id>`
+    /// `kexpnowplaying://toggle | play | pause | quit | restart | playlist | home | show/<id>`
     @objc private func handleGetURL(_ event: NSAppleEventDescriptor, withReply reply: NSAppleEventDescriptor) {
         let string = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue
         Logger(subsystem: SharedState.appDomain, category: "URL").info("open \(string ?? "<nil>", privacy: .public)")
@@ -38,9 +38,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             case "quit":
                 RadioPlayer.shared.pause()
                 NSApplication.shared.terminate(nil)
+            case "restart":
+                Self.relaunch(resumePlaying: RadioPlayer.shared.isPlaying)
             default: break
             }
         }
+    }
+
+    /// Quits and starts a fresh copy, resuming the stream if it was playing. A detached shell
+    /// waits for this process to exit before reopening the bundle.
+    @MainActor private static func relaunch(resumePlaying: Bool) {
+        let shell = Process()
+        shell.executableURL = URL(fileURLWithPath: "/bin/sh")
+        shell.arguments = [
+            "-c",
+            #"while kill -0 "$1" 2>/dev/null; do sleep 0.2; done; /usr/bin/open -g -a "$2" ${3:+"$3"}"#,
+            "relaunch",
+            String(ProcessInfo.processInfo.processIdentifier),
+            Bundle.main.bundlePath,
+            resumePlaying ? "kexpnowplaying://play" : "",
+        ]
+        do {
+            try shell.run()
+        } catch {
+            Logger(subsystem: SharedState.appDomain, category: "URL").error("relaunch failed: \(error, privacy: .public)")
+            return
+        }
+        RadioPlayer.shared.pause()
+        NSApplication.shared.terminate(nil)
     }
 }
 
